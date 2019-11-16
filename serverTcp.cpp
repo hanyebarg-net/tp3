@@ -12,6 +12,9 @@ bool isNegative(struct pollfd c) { return ((c.fd == -1)); }
 int main(int argc, char *argv[]) {
   char *port = argv[1];
   char client_message[MAX_LEN];
+  char user_names[MAX_CLIENT][MAX_LEN];
+  int cli_index = 0;
+
   struct pollfd client[MAX_CLIENT];
   Config *tcp_config = new Config();
   char addr[] = "::";  
@@ -29,7 +32,7 @@ int main(int argc, char *argv[]) {
   client[0].events = POLLRDNORM; // há dados para serem lidos  
   for (int i = 1; i < MAX_CLIENT; ++i) {
     client[i].fd = -1; // entrada não está sendo usada
-  }  
+  }
   
   while (true) {    
     int readable_desc = poll(client, MAX_CLIENT, -1); // esperar para sempre    
@@ -39,6 +42,7 @@ int main(int argc, char *argv[]) {
       if (new_client == tcp_config->error_state) {
         print_error_and_exit("new client with error");
       }
+      cli_index += 1;
       auto begin = client + 1;
       auto end = client + MAX_CLIENT;      
       auto p = std::find_if (begin, end, isNegative);
@@ -56,16 +60,11 @@ int main(int argc, char *argv[]) {
     }
     
     for (int i = 1; i < MAX_CLIENT; ++i) {
-      if (client[i].fd == -1) {
+      if (client[i].fd == -1) {       
         continue;
       }
-      else{
-        std::cout << "else" << "\n";
-      }
-      std::cout << "hihi" << "\n";
       
-      if (client[i].revents & POLLIN) { // RST foi recebido
-        std::cout << "pollin!" << "\n";
+      if (client[i].revents & (POLLRDNORM | POLLERR)) { // RST foi recebido        
         int received = recv(
           client[i].fd,
           client_message,
@@ -75,15 +74,14 @@ int main(int argc, char *argv[]) {
         if (received == tcp_config->error_state) {
           print_error_and_exit("received error");
         }
-        std::cout << "received" << "\n";
-        
-        std::cout << client_message << "\n";
+        if (client_message[0] == tcp_config->ACK) {
+          strcpy(user_names[cli_index], client_message);
+        }
         
         if (received <= 0) {          
           printf("Client closed or aborted connection!");
           close(client[i].fd);
-          client[i].fd = -1;
-          
+          client[i].fd = -1;          
           continue;
         }
         

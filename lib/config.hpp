@@ -34,5 +34,14 @@ class Config
   int sock_type_UDP;
   int protocol_UDP;
 
+  // unicode chars
+  char SOH;
+  char STX;
+  char ETX;
+  char EOT;
+  char ENQ;
+  char ACK;
+  char PM;
+  
   Config();
 };

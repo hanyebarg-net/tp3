@@ -1,7 +1,14 @@
 #include "config.hpp"
 
 Config ::Config()
-    : error_state(-1),
+    : error_state(-1),      
+      SOH(0x01),
+      STX(0x02),
+      ETX(0x03),
+      EOT(0x04),
+      ENQ(0x05),
+      ACK(0x06),
+      PM(0x9E),
       domain(AF_INET),
       sock_type(SOCK_STREAM),
       protocol(IPPROTO_TCP),
