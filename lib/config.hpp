@@ -1,4 +1,5 @@
 #include <sys/types.h>
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -14,7 +15,7 @@ class Config
   // socket
   int domain;
   int sock_type;
-  int protocol;  
+  int protocol;
 
   // server address
   int ai_family;
