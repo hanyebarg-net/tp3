@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
 
   struct pollfd client[MAX_CLIENT];
   Config *tcp_config = new Config();
-  char addr[] = "::";  
+  char addr[] = "::";
 
   int my_socket = create_socket(port, false, addr);
   if (my_socket == -1) {
@@ -29,22 +29,22 @@ int main(int argc, char *argv[]) {
     print_error_and_exit("setsockopt(SO_REUSEADDR) failed");
 
   client[0].fd = my_socket;  // 0 é o servidor
-  client[0].events = POLLRDNORM; // há dados para serem lidos  
+  client[0].events = POLLRDNORM; // há dados para serem lidos
   for (int i = 1; i < MAX_CLIENT; ++i) {
     client[i].fd = -1; // entrada não está sendo usada
   }
-  
-  while (true) {    
-    int readable_desc = poll(client, MAX_CLIENT, -1); // esperar para sempre    
-    
-    if (client[0].revents & POLLRDNORM) { // nova conexão      
-      int new_client = accept(my_socket, NULL, NULL);      
+
+  while (true) {
+    int readable_desc = poll(client, MAX_CLIENT, -1); // esperar para sempre
+
+    if (client[0].revents & POLLRDNORM) { // nova conexão
+      int new_client = accept(my_socket, NULL, NULL);
       if (new_client == tcp_config->error_state) {
         print_error_and_exit("new client with error");
       }
       cli_index += 1;
       auto begin = client + 1;
-      auto end = client + MAX_CLIENT;      
+      auto end = client + MAX_CLIENT;
       auto p = std::find_if (begin, end, isNegative);
 
       if (p == end) {
@@ -55,41 +55,50 @@ int main(int argc, char *argv[]) {
       p->events = POLLRDNORM; // nova conexão pronta pare ser aceita
       p->revents = 0;
       if (--readable_desc <= 0) {
-        continue;          
-      }
-    }
-    
-    for (int i = 1; i < MAX_CLIENT; ++i) {
-      if (client[i].fd == -1) {       
         continue;
       }
-      
-      if (client[i].revents & (POLLRDNORM | POLLERR)) { // RST foi recebido        
+    }
+
+    for (int i = 1; i < MAX_CLIENT; ++i) {
+      if (client[i].fd == -1) {
+        continue;
+      }
+
+      if (client[i].revents & (POLLRDNORM | POLLERR)) { // RST foi recebido
         int received = recv(
           client[i].fd,
           client_message,
           sizeof(client_message)-1,
           tcp_config->rec_flags);
-        
+
         if (received == tcp_config->error_state) {
           print_error_and_exit("received error");
         }
         if (client_message[0] == tcp_config->ACK) {
-          strcpy(user_names[cli_index], client_message);
+          std::cout << cli_index << "\n";
+          strcpy(user_names[cli_index-1], client_message);
+          std::cout << user_names[cli_index-1] << "\n";
         }
-        
-        if (received <= 0) {          
+
+        else if (client_message[0] == tcp_config->ENQ) {
+          std::cout << "hihi" << "\n";
+          for (i = 0; i < cli_index; ++i) {
+            std::cout << user_names[i] << "\n";
+          }
+        }
+
+        if (received <= 0) {
           printf("Client closed or aborted connection!");
           close(client[i].fd);
-          client[i].fd = -1;          
+          client[i].fd = -1;
           continue;
         }
-        
+
         write(client[i].fd, client_message, received);
-        
+
         if (--readable_desc <= 0) {
-          break;          
-        }        
+          break;
+        }
       }
     }
   }
