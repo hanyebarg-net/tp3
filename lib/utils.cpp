@@ -67,7 +67,7 @@ int create_socket(char *port, bool is_client, char *host) {
     print_error_and_exit("socket creation failed");
   }
   if (is_client && connect(my_sock, server_address->ai_addr, server_address->ai_addrlen) == -1) {    
-    print_error_and_exit("connecion failed... returning -1");
+    print_error_and_exit("connection failed... returning -1");
     my_sock = -1;
   }
   else if(

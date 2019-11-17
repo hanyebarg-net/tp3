@@ -35,10 +35,8 @@ int main(int argc, char *argv[]) {
   );
   user[user_size - 1] = '\0';
 
-  std::cout << config->ACK << "\n";
-  std::cout << user[0] << "\n";
 
-  int sending_state = send(my_socket, client_message, strlen(client_message), config->send_flags);
+  int sending_state = send(my_socket, user, strlen(user), config->send_flags);
   if (sending_state == config->error_state) {
     print_error_and_exit("Send failed");
   }
