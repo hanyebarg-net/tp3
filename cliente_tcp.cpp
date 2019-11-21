@@ -2,6 +2,7 @@
 #include <cstring>
 #include <cstddef>
 #include <cstring>
+#include <iterator>
 #include <string>
 #include <sys/poll.h>
 #include <vector>
@@ -11,8 +12,52 @@
 #include <iostream>
 #include <poll.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <thread>
 #include "lib/config.hpp"
 #include "lib/utils.hpp"
+
+
+int GetMessage(int sock)
+{
+	char buffer[1024];
+	int recvSize;
+
+	while(1)
+	{
+		recvSize = recv(sock, buffer, 1024, MSG_NOSIGNAL);
+		if (recvSize < 0)
+		{
+      shutdown(sock, SHUT_RDWR);
+      close(sock);
+
+      throw std::runtime_error("Server connection refused");
+		}
+
+		if (recvSize > 0)
+      std::cout << buffer << std::endl;
+	}
+
+	return 0;
+}
+
+int SendInput(int sock, const std::string & userName)
+{
+	std::string buffer;  
+  Config *config  = new Config();
+
+	while(1)
+	{
+		buffer = "";
+
+		std::cin >> buffer;
+    
+    buffer.insert(0, 1, config->STX);
+		send(sock, buffer.c_str(), 1024, MSG_NOSIGNAL);
+	}
+
+	return 0;
+}
 
 
 int main(int argc, char *argv[]) {
@@ -56,35 +101,13 @@ int main(int argc, char *argv[]) {
   std::cout << "2;usuarioX;msg (msg privada)" << "\n";
   std::cout << "3;msg (broadcast)" << "\n";
 
-  while(true) {
-    // poll(pfds, 2, -1);
-    getline (std::cin, input_string);
-    const char *option = input_string.c_str();
+  std::thread reading(GetMessage, std::ref(my_socket));
+  std::thread sending(SendInput, std::ref(my_socket), std::ref(input_string));
 
-    if (input_string[0] == '1') {
-      client_message[0] = config->ENQ;
-      client_message[1] = '\0';
-    }
+  reading.join();
+  sending.join();
 
-    else if (input_string[0] == '3') {
-      size_t pos = input_string.find(":");
-      input_string.erase(0,pos+1);
-      input_string.insert(0, 1, config->STX);
-      strcpy(client_message, input_string.c_str());
-    }
-
-    std::cout << "sending" << "\n";
-    int sending_state = send(my_socket, client_message, strlen(client_message), config->send_flags);
-    if (sending_state == config->error_state) {
-      print_error_and_exit("Send failed");
-    }
-    int received = recv(my_socket, server_response, sizeof(server_response), config->rec_flags);
-    if (received <= 0) {
-      print_error_and_exit("received with errors");
-    }
-    server_response[received] = '\0'; // TCP/IP Sockets in C: Practical Guide for Programmers.
-    std::cout << server_response << "\n";
-
-  }
+  shutdown(my_socket, SHUT_RDWR);
+  close(my_socket);
   return 0;
 }
