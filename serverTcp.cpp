@@ -55,25 +55,25 @@ int main(int argc, char *argv[]) {
       auto p = std::find_if (begin, end, isNegative);
 
       if (p == end) {
+        std::cout << "servidor cheio" << "\n";
         close(new_client); // servido está cheio!
         continue;
       }
       p->fd = new_client;
       p->events = POLLRDNORM; // nova conexão pronta pare ser aceita
       p->revents = 0;
-      if (--readable_desc <= 0) {
+      if (--readable_desc <= 0) {        
         continue;
       }
     }
 
-    for (int i = 1; i < MAX_CLIENT; ++i) {
+    for (int i = 1; i <= MAX_CLIENT; ++i) {
       if (sockets[i].fd == -1) {
         continue;
       }
 
       if (sockets[i].revents & (POLLRDNORM | POLLERR)) { // RST foi recebido
-        char client_message[MAX_LEN] = "";
-        std::cout << "receiving" << "\n";
+        char client_message[MAX_LEN] = "";        
         int received = recv(sockets[i].fd, client_message,
                             sizeof(client_message) - 1, tcp_config->rec_flags);
         if (received == tcp_config->error_state) {
@@ -83,10 +83,11 @@ int main(int argc, char *argv[]) {
           user_names.push_back(client_message);
           user_names_list += client_message;
           user_names_list += '\n';
-
+          
           catalogue[client_message] = i;
         }
         else if (client_message[0] == tcp_config->ENQ) {
+          std::cout << "ENQ!" << "\n";
           const char *client_message = user_names_list.c_str();
           write(sockets[i].fd, client_message, sizeof(user_names_list));
         }
@@ -99,21 +100,25 @@ int main(int argc, char *argv[]) {
           }
         }        
         if (received <= 0) {
-          std::cout << "saiu" << "\n";
+          int index = i-1;
+          
+          if (sockets.size() < 2) { // só tem um cliente            
+            sockets.clear();
+            user_names.clear();
+            user_names_list.clear();
+            std::cout << "clear all" << "\n";
+            continue;
+          }
           
           close(sockets[i].fd);
           sockets[i].fd = -1;
 
-          if (sockets.size() < 2) { // só tem um cliente
-            sockets.clear();
-            user_names.clear();            
-            continue;
-          }
-
           std::swap(sockets[i], sockets.back());
           sockets.pop_back();
           
-          std::swap(user_names[i], user_names.back());
+          std::cout << user_names[index] << "\n";
+          
+          std::swap(user_names[index], user_names.back());          
           user_names.pop_back();
 
           user_names_list = std::accumulate(user_names.begin(), user_names.end(), std::string{});

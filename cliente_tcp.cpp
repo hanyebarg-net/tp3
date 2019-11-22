@@ -34,8 +34,9 @@ int GetMessage(int sock)
       throw std::runtime_error("Server connection refused");
 		}
 
-		if (recvSize > 0)
+		if (recvSize > 0){      
       std::cout << buffer << std::endl;
+    }
 	}
 
 	return 0;
@@ -51,11 +52,18 @@ int SendInput(int sock, const std::string & userName)
 		buffer = "";
 
 		std::cin >> buffer;
-    
-    buffer.insert(0, 1, config->STX);
+
+
+    if (buffer[0] == '3') {
+      buffer.erase(buffer.begin(),buffer.begin()+2);
+      buffer.insert(0, 1, config->STX);
+    }    
+    else if (buffer[0] == '1') {
+      std::cout << "one!!" << "\n";
+      buffer = config->ENQ + '\0';
+    }
 		send(sock, buffer.c_str(), 1024, MSG_NOSIGNAL);
 	}
-
 	return 0;
 }
 
