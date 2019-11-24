@@ -58,15 +58,18 @@ int send_input(int sock, const std::string & userName) {
 	while(1) {
 		buffer = "";
     std::getline(std::cin, buffer);
-    if (buffer[0] == '3') {
-      buffer.erase(buffer.begin(),buffer.begin()+2);
+    if (buffer.substr(0,3) == "all") {
+      buffer.erase(buffer.begin(),buffer.begin()+4);
       buffer.insert(0, 1, config->STX);
     }
-    else if (buffer[0] == '2') {
-      buffer = config->PM + buffer.substr(1);
+    else if (buffer.substr(0,3) == "uni") {
+      buffer = config->PM + buffer.substr(3);
     }
-    else if (buffer[0] == '1') {
+    else if (buffer == "users") {
       buffer = config->ENQ;
+    }
+    else if (buffer == "exit") {
+      exit(0);
     }
 		send(sock, buffer.data(), buffer.size(), MSG_NOSIGNAL);
 	}
@@ -92,7 +95,7 @@ int main(int argc, char *argv[]) {
     print_error_and_exit("connected socket creation failed");
   }
 
-  std::cout << "Digite o nome de usuário" << "\n";
+  std::cout << "Digite o nome de usuário:" << "\n";
   getline (std::cin, input_string);
 
   std::size_t user_size = 1 + input_string.size() + 1;
@@ -111,9 +114,10 @@ int main(int argc, char *argv[]) {
   }
 
   std::cout << "Opções:" << "\n";
-  std::cout << "1 (listar usuários)" << "\n";
-  std::cout << "2;usuarioX;msg (msg privada)" << "\n";
-  std::cout << "3;msg (broadcast)" << "\n";
+  std::cout << "users" << "\n";
+  std::cout << "uni;usuarioX;msg" << "\n";
+  std::cout << "all;msg" << "\n";
+  std::cout << "exit" << "\n";
 
   std::thread reading(get_message, std::ref(my_socket));
   std::thread sending(send_input, std::ref(my_socket), std::ref(input_string));
