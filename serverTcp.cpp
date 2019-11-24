@@ -12,11 +12,6 @@
 #include "lib/config.hpp"
 #include "lib/utils.hpp"
 
-bool isNegative(struct pollfd c) { return ((c.fd == -1)); }
-
-auto concat = [](std::string &a, std::string &b) {
-                         return a + '\n' + b;
-              };
 
 int main(int argc, char *argv[]) {
   char *port = argv[1];
@@ -38,99 +33,103 @@ int main(int argc, char *argv[]) {
     print_error_and_exit("setsockopt(SO_REUSEADDR) failed");
 
   sockets.push_back({my_socket, POLLRDNORM});
-  for (int i = 1; i < MAX_CLIENT; ++i) {
-    sockets.push_back({-1});
-  }
 
   while (true) {
-    int readable_desc = poll(sockets.data(), MAX_CLIENT, -1); // esperar para sempre
+    poll(sockets.data(), sockets.size(), -1); // esperar para sempre
 
     if (sockets[0].revents & POLLRDNORM) { // nova conexão
       int new_client = accept(my_socket, NULL, NULL);
+
       if (new_client == tcp_config->error_state) {
         print_error_and_exit("new client with error");
       }
-      auto begin = sockets.begin() + 1;
-      auto end = sockets.begin() + MAX_CLIENT;
-      auto p = std::find_if (begin, end, isNegative);
 
-      if (p == end) {
-        std::cout << "servidor cheio" << "\n";
-        close(new_client); // servido está cheio!
-        continue;
-      }
-      p->fd = new_client;
-      p->events = POLLRDNORM; // nova conexão pronta pare ser aceita
-      p->revents = 0;
-      if (--readable_desc <= 0) {        
-        continue;
-      }
+      sockets.push_back({new_client, POLLRDNORM});
+      user_names.push_back("undefined");
     }
 
-    for (int i = 1; i <= MAX_CLIENT; ++i) {
-      if (sockets[i].fd == -1) {
-        continue;
-      }
+    auto socket = sockets.begin() + 1;
 
-      if (sockets[i].revents & (POLLRDNORM | POLLERR)) { // RST foi recebido
-        char client_message[MAX_LEN] = "";        
-        int received = recv(sockets[i].fd, client_message,
-                            sizeof(client_message) - 1, tcp_config->rec_flags);
+    while (socket != sockets.end()) {
+      if (socket->revents & (POLLRDNORM | POLLERR)) {
+        std::string client_message;
+        client_message.resize(MAX_LEN);
+
+        int received = recv(
+          socket->fd,
+          client_message.data(),
+          MAX_LEN,
+          tcp_config->rec_flags
+        );
+
         if (received == tcp_config->error_state) {
-          std::cout << "client closed connection" << "\n";
+          std::cout << "erro!\n";
+          return -1;
         }
-        if (client_message[0] == tcp_config->ACK) {          
-          user_names.push_back(client_message);
-          user_names_list += client_message;
-          user_names_list += '\n';
-          
-          catalogue[client_message] = i;
-        }
-        else if (client_message[0] == tcp_config->ENQ) {
-          std::cout << "ENQ!" << "\n";
-          const char *client_message = user_names_list.c_str();
-          write(sockets[i].fd, client_message, sizeof(user_names_list));
-        }
-        else if (client_message[0] == tcp_config->STX) {          
-          for (int j = 1; j < MAX_CLIENT; j++) {
-            if (sockets[j].fd != -1) {
-              std::cout << j << "\n";
-              write(sockets[j].fd, client_message, sizeof(client_message));          
-            }
-          }
-        }        
-        if (received <= 0) {
-          int index = i-1;
-          
-          if (sockets.size() < 2) { // só tem um cliente            
-            sockets.clear();
-            user_names.clear();
-            user_names_list.clear();
-            std::cout << "clear all" << "\n";
-            continue;
-          }
-          
-          close(sockets[i].fd);
-          sockets[i].fd = -1;
 
-          std::swap(sockets[i], sockets.back());
-          sockets.pop_back();
-          
-          std::cout << user_names[index] << "\n";
-          
-          std::swap(user_names[index], user_names.back());          
+        client_message.resize(received);
+
+        if (received <= 0) { // usuário saiu
+          close(socket->fd);
+
+          if (user_names.size() < 2) { // só tem um cliente                        
+            user_names.clear();
+            catalogue.clear();
+            sockets.erase(sockets.begin() + 1);
+            break;
+          }
+
+          auto i = socket - sockets.begin();
+
+          catalogue.erase(user_names[i - 1]);
+
+          if (user_names[i - 1] == user_names.back())          
+            std::swap(user_names[i - 1], user_names.back());          
           user_names.pop_back();
 
-          user_names_list = std::accumulate(user_names.begin(), user_names.end(), std::string{});
+          if (socket == sockets.end() -1)          
+            std::iter_swap(socket, sockets.end() - 1);
           
+          sockets.pop_back();
+
+          catalogue[user_names[i - 1]] = i;
+
           continue;
         }
 
-        if (--readable_desc <= 0) {          
-          break;
+        if (client_message[0] == tcp_config->ACK) {
+          auto name = client_message.substr(1);
+
+          if (catalogue.count(name)) {
+            const char message[] = "Nome de usuário indisponível!";
+            write(socket->fd, message, strlen(message));
+          }
+          else {
+            auto i = socket - sockets.begin();
+
+            catalogue[name] = i;
+            user_names[i - 1] = name;
+          }
+        }
+        else if (client_message[0] == tcp_config->ENQ) { // listar usuários
+          std::string response;
+
+          for (auto& username : user_names)
+            response += username + "\n";
+
+          write(socket->fd, response.data(), response.size());
+        }
+        else if (client_message[0] == tcp_config->STX) { // broadcast
+          auto text = client_message.substr(1);
+
+          for (auto socket = sockets.begin() + 1; socket != sockets.end(); ++socket) {
+            write(socket->fd, text.data(), text.size());
+          }
         }
       }
+
+      socket++;
     }
   }
-  exit(0);
+  return 0;
 }

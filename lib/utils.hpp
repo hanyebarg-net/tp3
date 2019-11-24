@@ -1,7 +1,7 @@
 #include <string>
 #include <netdb.h>
 #define MAX_LEN 80
-#define MAX_CLIENT 3 // 255
+
 
 typedef struct addr_info {
   struct sockaddr_storage Source;

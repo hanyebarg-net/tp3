@@ -18,41 +18,34 @@
 #include "lib/utils.hpp"
 
 
-int GetMessage(int sock)
-{
+int get_message(int sock) {
 	char buffer[1024];
 	int recvSize;
-
-	while(1)
-	{
+  
+	while(1) {
 		recvSize = recv(sock, buffer, 1024, MSG_NOSIGNAL);
-		if (recvSize < 0)
-		{
+		if (recvSize < 0) {
       shutdown(sock, SHUT_RDWR);
       close(sock);
 
       throw std::runtime_error("Server connection refused");
 		}
 
-		if (recvSize > 0){      
+		if (recvSize > 0) {      
       std::cout << buffer << std::endl;
     }
 	}
-
+  
 	return 0;
 }
 
-int SendInput(int sock, const std::string & userName)
-{
+int send_input(int sock, const std::string & userName) {
 	std::string buffer;  
   Config *config  = new Config();
 
-	while(1)
-	{
+	while(1) {
 		buffer = "";
-
 		std::cin >> buffer;
-
 
     if (buffer[0] == '3') {
       buffer.erase(buffer.begin(),buffer.begin()+2);
@@ -64,6 +57,7 @@ int SendInput(int sock, const std::string & userName)
     }
 		send(sock, buffer.c_str(), 1024, MSG_NOSIGNAL);
 	}
+  
 	return 0;
 }
 
@@ -109,8 +103,8 @@ int main(int argc, char *argv[]) {
   std::cout << "2;usuarioX;msg (msg privada)" << "\n";
   std::cout << "3;msg (broadcast)" << "\n";
 
-  std::thread reading(GetMessage, std::ref(my_socket));
-  std::thread sending(SendInput, std::ref(my_socket), std::ref(input_string));
+  std::thread reading(get_message, std::ref(my_socket));
+  std::thread sending(send_input, std::ref(my_socket), std::ref(input_string));
 
   reading.join();
   sending.join();
