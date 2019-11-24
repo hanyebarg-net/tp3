@@ -31,8 +31,11 @@ int get_message(int sock) {
       throw std::runtime_error("Server connection refused");
 		}
 
-		if (recvSize > 0) {      
-      std::cout << buffer << std::endl;
+		if (recvSize > 0) {
+      for (int i = 0; i < recvSize; ++i)
+        std::cout << buffer[i];
+
+      std::cout << std::endl;
     }
 	}
   
@@ -46,16 +49,14 @@ int send_input(int sock, const std::string & userName) {
 	while(1) {
 		buffer = "";
 		std::cin >> buffer;
-
     if (buffer[0] == '3') {
       buffer.erase(buffer.begin(),buffer.begin()+2);
       buffer.insert(0, 1, config->STX);
     }    
-    else if (buffer[0] == '1') {
-      std::cout << "one!!" << "\n";
-      buffer = config->ENQ + '\0';
+    else if (buffer[0] == '1') {      
+      buffer = config->ENQ;
     }
-		send(sock, buffer.c_str(), 1024, MSG_NOSIGNAL);
+		send(sock, buffer.data(), buffer.size(), MSG_NOSIGNAL);
 	}
   
 	return 0;
@@ -91,8 +92,7 @@ int main(int argc, char *argv[]) {
     user + 1
     );
   user[user_size - 1] = '\0';
-
-  std::cout << "sending" << "\n";
+  
   int sending_state = send(my_socket, user, strlen(user), config->send_flags);
   if (sending_state == config->error_state) {
     print_error_and_exit("Send failed");
