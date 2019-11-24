@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
         if (received <= 0) { // usuário saiu
           close(socket->fd);
 
-          if (user_names.size() < 2) { // só tem um cliente                        
+          if (user_names.size() < 2) { // só tem um cliente
             user_names.clear();
             catalogue.clear();
             sockets.erase(sockets.begin() + 1);
@@ -83,8 +83,8 @@ int main(int argc, char *argv[]) {
 
           catalogue.erase(user_names[i - 1]);
 
-          
-          std::swap(user_names[i - 1], user_names.back());          
+
+          std::swap(user_names[i - 1], user_names.back());
           user_names.pop_back();
 
           auto end = sockets.end();
