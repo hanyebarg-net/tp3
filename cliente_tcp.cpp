@@ -29,7 +29,6 @@ int get_message(int sock) {
     if (recvSize < 0) {
       shutdown(sock, SHUT_RDWR);
       close(sock);
-
       throw std::runtime_error("Server connection refused");
     }
 
@@ -37,10 +36,8 @@ int get_message(int sock) {
       for (int i = 0; i < recvSize; ++i){
         if (buffer[i] == config->SOH)
           continue;
-
         std::cout << buffer[i];
       }
-
       std::cout << std::endl;
       if (buffer[0] == config->SOH) {
         exit(0);
