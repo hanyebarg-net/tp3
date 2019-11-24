@@ -83,14 +83,17 @@ int main(int argc, char *argv[]) {
 
           catalogue.erase(user_names[i - 1]);
 
-          if (user_names[i - 1] == user_names.back())          
-            std::swap(user_names[i - 1], user_names.back());          
+          
+          std::swap(user_names[i - 1], user_names.back());          
           user_names.pop_back();
 
-          if (socket == sockets.end() -1)          
-            std::iter_swap(socket, sockets.end() - 1);
-          
+          auto end = sockets.end();
+
+          std::iter_swap(socket, sockets.end() - 1);
           sockets.pop_back();
+
+          if (socket + 1 == end)
+            break;
 
           catalogue[user_names[i - 1]] = i;
 
