@@ -1,0 +1,121 @@
+% Created 2019-11-24 Sun 15:41
+% Intended LaTeX compiler: pdflatex
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{grffile}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{textcomp}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\usepackage{minted}
+\usepackage[a4paper, margin=2cm]{geometry}
+\usepackage{indentfirst}
+\usepackage[, brazilian]{babel}
+\usepackage{float}
+\usepackage{color, colortbl}
+\usepackage{titling}
+\setlength{\droptitle}{-1.5cm}
+\hypersetup{ colorlinks = true, urlcolor = blue }
+\definecolor{beige}{rgb}{0.93,0.93,0.82}
+\definecolor{brown}{rgb}{0.4,0.2,0.0}
+\author{Fernanda Guimarães -- 2016058166}
+\date{}
+\title{Trabalho Prático 3 -- Redes de Computadores}
+\hypersetup{
+ pdfauthor={Fernanda Guimarães -- 2016058166},
+ pdftitle={Trabalho Prático 3 -- Redes de Computadores},
+ pdfkeywords={},
+ pdfsubject={},
+ pdfcreator={Emacs 26.3 (Org mode 9.1.9)}, 
+ pdflang={Brazilian}}
+\begin{document}
+
+\maketitle
+
+\section{Framework escolhido}
+\label{sec:orgf5b5ad2}
+Foi utilizado \texttt{poll} para o servidor e \texttt{threads} no cliente. Escolhi o poll devido a
+sua excelente \href{http://man7.org/linux/man-pages/man2/poll.2.html}{documentação}. Já as \texttt{threads} foram usadas para resolver o problema do
+cliente de poder digitar e receber mensagens ao mesmo tempo, e por serem mais simples de
+implementar.
+
+Assim, foram utilizadas threads apenas em duas funções:
+\begin{minted}[]{c++}
+int get_message(int sock);
+int send_input(int sock, const std::string & userName);
+\end{minted}
+
+\section{Identificadores de Mensagem}
+\label{sec:org709e75c}
+O cliente seta alguns delimitadores no início de cada mensagem para o servidor.
+
+\begin{center}
+\begin{tabular}{ll}
+Unicode & Significado\\
+\hline
+PM & Mensagem privada\\
+ENQ & Listar usuários\\
+STX & Broadcast\\
+ACK & Novo usuário\\
+\end{tabular}
+\end{center}
+
+\section{Instrucões}
+\label{sec:org2ec396c}
+Primeiro, compile os arquivos com o comando \texttt{make}.
+
+Após isso, execute o servidor com uma porta (no exemplo, 9000):
+\begin{verbatim}
+./servidor 9000
+\end{verbatim}
+
+Agora, basta criar clientes na mesma porta:
+\begin{verbatim}
+./cliente localhost 9000
+\end{verbatim}
+
+O endereço é agnóstico à natureza, aceitando tanto nome de domínios quanto ipv6 ou 4.
+\subsection{Listar usuários}
+\label{sec:orgaa27896}
+Comando:
+\begin{verbatim}
+users
+\end{verbatim}
+A primeira coisa que um cliente deve fazer é digitar um nome de usuário. Antes disso,
+é mantido como \texttt{undefined}.
+\subsection{Mensagem privada}
+\label{sec:org1d20abb}
+Para mandar uma mensagem privada (\texttt{unicast}), bast digitar o comando:
+\begin{verbatim}
+uni;usuárioX;msg
+\end{verbatim}
+\subsection{\texttt{Broadcast}}
+\label{sec:org9484c26}
+Para mandar uma mensagem a todos usuários, incluindo a si mesmo, basta digitar o
+comando:
+\begin{verbatim}
+all;msg
+\end{verbatim}
+\subsection{Sair}
+\label{sec:orge84c84e}
+Comando:
+\begin{verbatim}
+exit
+\end{verbatim}
+\section{Observações}
+\label{sec:orga2c0550}
+\begin{itemize}
+\item Clientes infinitos, setados dinamicamente;
+\item Tamanho máximo de mensagem \texttt{80};
+\item Servidor usa \texttt{poll}, cliente usa \texttt{threads};
+\item Agnóstico a \texttt{IPV6} e \texttt{IPV4}.
+\item Valores de constantes se encontram no arquivo de configuração \texttt{lib/config.cpp}.
+\end{itemize}
+\end{document}

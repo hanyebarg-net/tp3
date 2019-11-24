@@ -1,0 +1,84 @@
+# -*- after-save-hook: org-latex-export-to-pdf; -*-
+#+options: date:nil
+#+language: bt-br
+#+latex_header: \usepackage[a4paper, margin=2cm]{geometry}
+#+latex_header: \usepackage{indentfirst}
+#+latex_header: \usepackage[]{babel}
+#+latex_header: \usepackage{float}
+#+latex_header: \usepackage{color, colortbl}
+#+latex_header: \usepackage{titling}
+#+latex_header: \setlength{\droptitle}{-1.5cm}
+#+latex_header: \hypersetup{ colorlinks = true, urlcolor = blue }
+#+latex_header: \definecolor{beige}{rgb}{0.93,0.93,0.82}
+#+latex_header: \definecolor{brown}{rgb}{0.4,0.2,0.0}
+
+
+#+author: Fernanda Guimarães -- 2016058166
+#+title: Trabalho Prático 3 -- Redes de Computadores
+
+* Framework escolhido
+  Foi utilizado =poll= para o servidor e =threads= no cliente. Escolhi o poll devido a
+  sua excelente [[http://man7.org/linux/man-pages/man2/poll.2.html][documentação]]. Já as =threads= foram usadas para resolver o problema do
+  cliente de poder digitar e receber mensagens ao mesmo tempo, e por serem mais simples de
+  implementar.
+
+  Assim, foram utilizadas threads apenas em duas funções:
+  #+BEGIN_SRC c++
+    int get_message(int sock);
+    int send_input(int sock, const std::string & userName);
+  #+END_SRC
+
+* Identificadores de Mensagem
+  O cliente seta alguns delimitadores no início de cada mensagem para o servidor.
+  
+  | Unicode | Significado      |
+  |---------+------------------|
+  | PM      | Mensagem privada |
+  | ENQ     | Listar usuários  |
+  | STX     | Broadcast        |
+  | ACK     | Novo usuário     |  
+  
+* Instrucões
+  Primeiro, compile os arquivos com o comando =make=.
+
+  Após isso, execute o servidor com uma porta (no exemplo, 9000):
+  #+begin_example
+  ./servidor 9000
+  #+end_example
+
+  Agora, basta criar clientes na mesma porta:
+  #+begin_example
+  ./cliente localhost 9000
+  #+end_example
+
+  O endereço é agnóstico à natureza, aceitando tanto nome de domínios quanto ipv6 ou 4.
+** Listar usuários
+    Comando:
+    #+begin_example
+    users
+    #+end_example    
+    A primeira coisa que um cliente deve fazer é digitar um nome de usuário. Antes disso,
+    é mantido como =undefined=.
+** Mensagem privada
+   Para mandar uma mensagem privada (=unicast=), bast digitar o comando:
+   #+begin_example
+   uni;usuárioX;msg
+   #+end_example
+** =Broadcast=
+   Para mandar uma mensagem a todos usuários, incluindo a si mesmo, basta digitar o
+   comando:
+   #+begin_example
+   all;msg
+   #+end_example
+** Sair
+   Comando:
+   #+begin_example
+   exit
+   #+end_example
+* Observações
+  - Clientes infinitos, setados dinamicamente;
+  - Tamanho máximo de mensagem =80=;
+  - Servidor usa =poll=, cliente usa =threads=;
+  - Agnóstico a =IPV6= e =IPV4=.
+  - Valores de constantes se encontram no arquivo de configuração =lib/config.cpp=.
+
