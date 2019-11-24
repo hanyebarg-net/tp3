@@ -124,6 +124,23 @@ int main(int argc, char *argv[]) {
 
           write(socket->fd, response.data(), response.size());
         }
+        else if(client_message[0] == tcp_config->PM) {
+          std::size_t first = client_message.find(';');
+          std::size_t last = client_message.find_last_of(';');
+
+          std::string msg = client_message.substr(last+1);
+          std::string user_pm = client_message.substr(first+1, last-2);
+          std::cout << user_pm << "\n";
+
+          if (catalogue.find(user_pm) == catalogue.end() ) {
+            const char response[] = "Usuário não encontrado!";
+            write(socket->fd, response, strlen(response));
+          }
+          else {
+            std::size_t sock_position = catalogue[user_pm];
+            write(sockets[sock_position].fd, msg.data(), msg.size());
+          }
+        }
         else if (client_message[0] == tcp_config->STX) { // broadcast
           auto text = client_message.substr(1);
 

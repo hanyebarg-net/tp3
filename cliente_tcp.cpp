@@ -57,10 +57,13 @@ int send_input(int sock, const std::string & userName) {
 
 	while(1) {
 		buffer = "";
-		std::cin >> buffer;
+    std::getline(std::cin, buffer);
     if (buffer[0] == '3') {
       buffer.erase(buffer.begin(),buffer.begin()+2);
       buffer.insert(0, 1, config->STX);
+    }
+    else if (buffer[0] == '2') {
+      buffer = config->PM + buffer.substr(1);
     }
     else if (buffer[0] == '1') {
       buffer = config->ENQ;
