@@ -21,19 +21,19 @@
 
 int get_message(int sock) {
   Config *config  = new Config();
-	char buffer[MAX_LEN];
-	int recvSize;
+  char buffer[MAX_LEN];
+  int recvSize;
 
-	while(1) {
-		recvSize = recv(sock, buffer, 1024, MSG_NOSIGNAL);
-		if (recvSize < 0) {
+  while(1) {
+    recvSize = recv(sock, buffer, 1024, MSG_NOSIGNAL);
+    if (recvSize < 0) {
       shutdown(sock, SHUT_RDWR);
       close(sock);
 
       throw std::runtime_error("Server connection refused");
-		}
+    }
 
-		if (recvSize > 0) {
+    if (recvSize > 0) {
       for (int i = 0; i < recvSize; ++i){
         if (buffer[i] == config->SOH)
           continue;
@@ -46,17 +46,17 @@ int get_message(int sock) {
         exit(0);
       }
     }
-	}
+  }
 
-	return 0;
+  return 0;
 }
 
 int send_input(int sock, const std::string & userName) {
-	std::string buffer;
+  std::string buffer;
   Config *config  = new Config();
 
-	while(1) {
-		buffer = "";
+  while(1) {
+    buffer = "";
     std::getline(std::cin, buffer);
     if (buffer.substr(0,3) == "all") {
       buffer.erase(buffer.begin(),buffer.begin()+4);
@@ -71,10 +71,10 @@ int send_input(int sock, const std::string & userName) {
     else if (buffer == "exit") {
       exit(0);
     }
-		send(sock, buffer.data(), buffer.size(), MSG_NOSIGNAL);
-	}
+    send(sock, buffer.data(), buffer.size(), MSG_NOSIGNAL);
+  }
 
-	return 0;
+  return 0;
 }
 
 
