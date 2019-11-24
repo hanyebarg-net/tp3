@@ -104,7 +104,9 @@ int main(int argc, char *argv[]) {
           auto name = client_message.substr(1);
 
           if (catalogue.count(name)) {
-            const char message[] = "Nome de usuário indisponível!";
+            char message[MAX_LEN] = "";
+            message[0] = tcp_config->SOH;
+            strcat(message, "Usuário indisponível\0");
             write(socket->fd, message, strlen(message));
           }
           else {

@@ -12,6 +12,7 @@
 #include <iostream>
 #include <poll.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <fcntl.h>
 #include <thread>
 #include "lib/config.hpp"
@@ -19,9 +20,10 @@
 
 
 int get_message(int sock) {
-	char buffer[1024];
+  Config *config  = new Config();
+	char buffer[MAX_LEN];
 	int recvSize;
-  
+
 	while(1) {
 		recvSize = recv(sock, buffer, 1024, MSG_NOSIGNAL);
 		if (recvSize < 0) {
@@ -32,18 +34,25 @@ int get_message(int sock) {
 		}
 
 		if (recvSize > 0) {
-      for (int i = 0; i < recvSize; ++i)
+      for (int i = 0; i < recvSize; ++i){
+        if (buffer[i] == config->SOH)
+          continue;
+
         std::cout << buffer[i];
+      }
 
       std::cout << std::endl;
+      if (buffer[0] == config->SOH) {
+        exit(0);
+      }
     }
 	}
-  
+
 	return 0;
 }
 
 int send_input(int sock, const std::string & userName) {
-	std::string buffer;  
+	std::string buffer;
   Config *config  = new Config();
 
 	while(1) {
@@ -52,13 +61,13 @@ int send_input(int sock, const std::string & userName) {
     if (buffer[0] == '3') {
       buffer.erase(buffer.begin(),buffer.begin()+2);
       buffer.insert(0, 1, config->STX);
-    }    
-    else if (buffer[0] == '1') {      
+    }
+    else if (buffer[0] == '1') {
       buffer = config->ENQ;
     }
 		send(sock, buffer.data(), buffer.size(), MSG_NOSIGNAL);
 	}
-  
+
 	return 0;
 }
 
@@ -92,7 +101,7 @@ int main(int argc, char *argv[]) {
     user + 1
     );
   user[user_size - 1] = '\0';
-  
+
   int sending_state = send(my_socket, user, strlen(user), config->send_flags);
   if (sending_state == config->error_state) {
     print_error_and_exit("Send failed");
