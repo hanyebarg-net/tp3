@@ -130,7 +130,6 @@ int main(int argc, char *argv[]) {
 
           std::string msg = client_message.substr(last+1);
           std::string user_pm = client_message.substr(first+1, last-2);
-          std::cout << user_pm << "\n";
 
           if (catalogue.find(user_pm) == catalogue.end() ) {
             const char response[] = "Usuário não encontrado!";
