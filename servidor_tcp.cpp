@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
           continue;
         }
 
-        if (client_message[0] == tcp_config->ACK) {
+        if (client_message[0] == tcp_config->ACK) { // novo usuário
           auto name = client_message.substr(1);
 
           if (catalogue.count(name)) {
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
 
           write(socket->fd, response.data(), response.size());
         }
-        else if(client_message[0] == tcp_config->PM) {
+        else if(client_message[0] == tcp_config->PM) { // mensagem privada
           std::size_t first = client_message.find(';');
           std::size_t last = client_message.find_last_of(';');
 

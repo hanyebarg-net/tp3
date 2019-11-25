@@ -25,7 +25,7 @@ int get_message(int sock) {
   int recvSize;
 
   while(1) {
-    recvSize = recv(sock, buffer, 1024, MSG_NOSIGNAL);
+    recvSize = recv(sock, buffer, MAX_LEN, MSG_NOSIGNAL);
     if (recvSize < 0) {
       shutdown(sock, SHUT_RDWR);
       close(sock);
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
   char user[user_max_size];
   std::string input_string;
 
-  // config options found at http://man7.org/linux/man-pages/man2/socket.2.html
+  // http://man7.org/linux/man-pages/man2/socket.2.html
   int my_socket = create_socket(port, true, ip_addr);
   if (my_socket == config->error_state) {
     print_error_and_exit("connected socket creation failed");
